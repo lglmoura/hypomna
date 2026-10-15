@@ -7,7 +7,7 @@ Padronizar bootstrap do Prisma no backend NestJS com:
 - schema modular em `<backendAppPath>/prisma/models/*.model.prisma`, com `schema.prisma` (generator `prisma-client`, `output = "../src/generated/prisma"`, PRD §5.1) como raiz
 - entrypoint de seed técnico em `<backendAppPath>/prisma/seed/main.ts` (sem seeds de módulos)
 - módulo Nest de banco em `<backendAppPath>/src/db/*` com `PrismaService` compatível com `TransactionManager`/`runInTransaction`, cuja interface vive no pacote `sharedModulePath` (`skills.config.json`, padrão `packages/shared`) — criado por esta skill quando ainda não existe, distinto de `packages/contracts` (schemas Zod compartilhados com os clientes, PRD §6.1)
-- Docker Compose do backend compatível com `DATABASE_URL`, nunca reescrito por inteiro (este projeto espera os dois Redis — `redis-queue` e `redis-cache` — no mesmo arquivo, ao lado do Postgres, PRD §6) — se o arquivo já existir sem `postgres` (ex.: a skill `config-redis` rodou primeiro), o serviço é injetado preservando o resto, funcionando em qualquer ordem entre as duas skills
+- Docker Compose do backend compatível com `DATABASE_URL`, nunca reescrito por inteiro (o mesmo arquivo reúne Postgres, Redis em instância única, MinIO e Mailpit, PRD §6.1/§6.2) — se o arquivo já existir sem `postgres` (ex.: a skill `config-redis` rodou primeiro), o serviço é injetado preservando o resto, funcionando em qualquer ordem entre as duas skills
 
 `<backendAppPath>` vem de `skills.config.json` (padrão `apps/api` neste repositório — ver `.claude/skills/.env/skills.config.json`).
 
@@ -61,7 +61,7 @@ node .claude/skills/config-prisma/scripts/init-prisma-backend.js --apply --modul
 - O bootstrap de seed deve permanecer neutro até os módulos específicos serem aplicados.
 - `prisma/models/bootstrap.model.prisma` deve existir apenas quando ainda não há arquivos `*.model.prisma` de domínio.
 - Não sobrescrever `prisma/seed/main.ts` já moderno (com `@prisma/client`/`PrismaPg` e tasks de módulo); somente corrigir templates legados.
-- Não sobrescrever `docker-compose.yml` por inteiro — apenas injeta o serviço `postgres` (e o volume `postgres_data`) se ainda não existirem; o arquivo pode acumular outros serviços (ex.: `redis-queue`/`redis-cache`, PRD §6) adicionados pela `config-redis`, em qualquer ordem de execução entre as duas skills.
+- Não sobrescrever `docker-compose.yml` por inteiro — apenas injeta o serviço `postgres` (e o volume `postgres_data`) se ainda não existirem; o arquivo pode acumular outros serviços (ex.: `redis`, PRD §6.2/§7) adicionados pela `config-redis`, em qualquer ordem de execução entre as duas skills.
 - Todo comando de Prisma/tsx gerado usa `pnpm exec`, nunca `npx`.
 
 ## Flags

@@ -4,12 +4,12 @@ Criar uma spec (via OpenSpec) para configurar o projeto **de ponta a ponta**, ex
 
 ## Topologia alvo (PRD §1.4/§6.1)
 
-| App                  | Tecnologia                | Papel                         | Autenticação (PRD §4.1, §6.2) |
-| -------------------- | ------------------------- | ----------------------------- | ----------------------------- |
-| `apps/api`           | NestJS                    | backend único                 | —                             |
-| `apps/web`           | Next.js (App Router)      | Trader                        | cookie                        |
-| `apps/web-admin`     | Next.js (App Router)      | Admin e Suporte da Plataforma | cookie + TOTP                 |
-| `apps/web-marketing` | Next.js (App Router, estático) | Visitante (landing e preços) | nenhuma                       |
+| App                  | Tecnologia                     | Papel                         | Autenticação (PRD §4.1, §6.2) |
+| -------------------- | ------------------------------ | ----------------------------- | ----------------------------- |
+| `apps/api`           | NestJS                         | backend único                 | —                             |
+| `apps/web`           | Next.js (App Router)           | Trader                        | cookie                        |
+| `apps/web-admin`     | Next.js (App Router)           | Admin e Suporte da Plataforma | cookie + TOTP                 |
+| `apps/web-marketing` | Next.js (App Router, estático) | Visitante (landing e preços)  | nenhuma                       |
 
 Pacotes (PRD §6.1): `packages/domain`, `packages/contracts`, `packages/api-client`, `packages/i18n`, `packages/ui`, `packages/test-utils`, `packages/eslint-config` e `packages/tsconfig`. Nenhum app mobile existe na v1 (PRD §1.6) e nenhum app atende mais de um papel (princípio 7).
 
@@ -33,7 +33,7 @@ Infra local (PRD §6.1): `docker compose` com PostgreSQL 16+, Redis 7+, MinIO (S
 ## Passos
 
 1. **Criar o projeto base**
-   - Usar a skill `config-project`: `node .claude/skills/config-project/scripts/project-init.mjs`.
+   - Usar a skill `config-project`: `node .claude/skills/config-project/scripts/project-init.mjs --skip-global-nest` (cria o backend via `npx @nestjs/cli`; sem a flag, a instalação global do Nest CLI falha quando o bin global do pnpm não está no PATH). Rodar em foreground e **sem** `CI=1`, que força `frozen-lockfile` e quebra o passo do Husky.
    - Namespace: `@hypomna`.
    - **Versões:** usar as versões atuais (`create-next-app@latest`, `nest new`), sem pinar. O PRD só fixa Node.js 24.x, PostgreSQL 16+ e Redis 7+.
    - Esse passo já inclui os git hooks (Husky: pre-commit com lint-staged + ESLint + Prettier; pre-push com `check-types` e testes unitários, PRD §7.1), o ferramental de testes da PRD §7.1 (Vitest + `@amiceli/vitest-cucumber`) e o `pnpm test:trace` (RF-86) — **não rodar a skill `setup-pre-commit` separadamente depois**: o `SKILL.md` do `config-project` documenta que ela só deve ser usada isolada em repositórios fora do padrão Turborepo, e rodar as duas em sequência é redundante (na pior hipótese, gera `eslint.config`/`.lintstagedrc` concorrentes).

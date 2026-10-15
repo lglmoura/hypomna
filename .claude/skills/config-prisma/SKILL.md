@@ -10,7 +10,7 @@ description: 'Inicializar e padronizar a infraestrutura do Prisma no backend Nes
 Executar setup determinístico da infraestrutura Prisma no workspace de backend do monorepo (`backendAppPath` em `skills.config.json`, padrão `apps/api` — ver `.claude/skills/.env/skills.config.json` deste repositório), com seed entrypoint neutro (sem tasks de módulo), módulo de banco no Nest e inicialização do Postgres via Docker Compose alinhada ao `.env`.
 O contrato gerado de banco deve ficar compatível com a versão atual do projeto: `PrismaService` implementando `TransactionManager` e expondo `runInTransaction` para casos de uso transacionais (ex.: auth).
 Todo comando de Prisma/tsx roda via `pnpm exec` (nunca `npx`), mantendo o pnpm como gerenciador único do monorepo.
-O `docker-compose.yml` do backend é criado uma única vez; se já existir, a skill nunca o sobrescreve — este projeto espera os dois Redis (`redis-queue` e `redis-cache`, PRD §6) no mesmo arquivo, ao lado do Postgres, então regenerar o arquivo inteiro a cada execução apagaria esse serviço.
+O `docker-compose.yml` do backend é criado uma única vez; se já existir, a skill nunca o sobrescreve — o mesmo arquivo reúne `postgres`, `redis` (instância única, PRD §6.2/§7), `minio` e `mailpit`, então regenerar o arquivo inteiro a cada execução apagaria os outros serviços.
 
 ## Workflow
 
@@ -26,9 +26,8 @@ O `docker-compose.yml` do backend é criado uma única vez; se já existir, a sk
    - `pnpm --filter <nome-do-workspace-backend> run db:start`
 5. Validar Prisma:
    - `pnpm --filter <nome-do-workspace-backend> run prisma:generate`
-6. Rodar ciclo completo de banco (desenvolvimento local, a partir do diretório do backend):
-   - `pnpm exec prisma migrate reset`
-   - `pnpm exec prisma migrate dev`
+6. Migrar só quando houver modelo real (desenvolvimento local, a partir do diretório do backend), sempre de forma não destrutiva — **nunca** `prisma migrate reset`, `db push --force-reset` ou outro comando que apague dados:
+   - `pnpm exec prisma migrate dev --name <nome>` (aplica só o que falta)
    - `pnpm exec prisma generate`
    - `pnpm exec prisma db seed`
 
@@ -47,7 +46,7 @@ O `docker-compose.yml` do backend é criado uma única vez; se já existir, a sk
 - Não cria nem altera `prisma/seed/tasks/*` de módulos específicos.
 - `<backendAppPath>/prisma/models/bootstrap.model.prisma` temporário apenas quando ainda não existe nenhum `*.model.prisma` de domínio.
 - Arquivos de módulos Prisma no padrão `<module-name>.model.prisma`, com um comentário de cabeçalho lembrando que todo modelo de domínio precisa carregar (direta ou indiretamente) o campo que resolve o tenant, por causa do isolamento multi-tenant inegociável do PRD (§1.5/§3.2).
-- `<backendAppPath>/docker-compose.yml`, alinhado ao `DATABASE_URL` carregado de `<backendAppPath>/.env` (fallback para `.env.example`) — a skill nunca reescreve o arquivo inteiro (o PRD espera os dois Redis no mesmo arquivo, ao lado do Postgres — ver §6): se o arquivo não existir, cria só com `postgres`; se já existir sem o serviço `postgres` (ex.: a skill `config-redis` rodou primeiro e criou o arquivo só com `redis-queue`/`redis-cache`), injeta o bloco `postgres` (e o volume `postgres_data`) preservando todo o resto do arquivo — funciona em qualquer ordem entre `config-prisma`/`config-redis`; se já tiver `postgres`, não altera nada.
+- `<backendAppPath>/docker-compose.yml`, alinhado ao `DATABASE_URL` carregado de `<backendAppPath>/.env` (fallback para `.env.example`) — a skill nunca reescreve o arquivo inteiro (o mesmo arquivo reúne Postgres, Redis, MinIO e Mailpit — PRD §6.1): se o arquivo não existir, cria só com `postgres`; se já existir sem o serviço `postgres` (ex.: a skill `config-redis` rodou primeiro e criou o arquivo só com `redis`), injeta o bloco `postgres` (e o volume `postgres_data`) preservando todo o resto do arquivo — funciona em qualquer ordem entre `config-prisma`/`config-redis`; se já tiver `postgres`, não altera nada.
 - Criação do pacote `sharedModulePath` (`skills.config.json`, padrão `packages/shared`) quando ainda não existe: pacote interno sem build próprio (`package.json` + `tsconfig.json` estendendo `<namespace>/typescript-config/base.json` + `src/index.ts`) exportando `TransactionManager`/`TransactionContext` — distinto de `packages/contracts` (schemas Zod compartilhados com os clientes, PRD §6.1, esqueleto criado pela skill `config-project`): este pacote é consumido só por `<backendAppPath>`, nunca pelos clientes (`web`, `web-admin`, `web-marketing`). **Não consta na árvore de pacotes do PRD §6.1** — é um acréscimo desta skill para o contrato transacional; registrar o desvio e decidir na spec de arquitetura se fica como pacote ou migra para `apps/api/src/shared` (PRD §6.2). Adicionado como dependência do backend via `workspace:*`.
 - Criação/ajuste de `<backendAppPath>/src/db/db.module.ts` e `<backendAppPath>/src/db/prisma.service.ts` (este importa `Prisma`/`PrismaClient` do client gerado em `../generated/prisma/client.js`, não de `@prisma/client`).
 - `PrismaService` com contrato transacional atual:
@@ -62,8 +61,8 @@ O `docker-compose.yml` do backend é criado uma única vez; se já existir, a sk
 - O script resolve o workspace de backend via `backendAppPath` (`skills.config.json`, padrão `apps/api`) e falha com uma mensagem clara se o `package.json` não existir nesse caminho, orientando a configurar `backendAppPath` quando o backend viver em outro lugar.
 - O script instala usando o nome real do workspace lido de `<backendAppPath>/package.json` (fallback: o próprio `backendAppPath`).
 - Após criar modelos reais, remover `prisma/models/bootstrap.model.prisma` (se existir) e gerar nova migration.
-- Para ambientes locais de desenvolvimento, após ajustes no schema, executar o fluxo completo (a partir do diretório do backend):
-  - `pnpm exec prisma migrate reset && pnpm exec prisma migrate dev && pnpm exec prisma generate && pnpm exec prisma db seed`
+- Para ambientes locais de desenvolvimento, após ajustes no schema, migrar sem apagar dados (a partir do diretório do backend):
+  - `pnpm exec prisma migrate dev --name <nome> && pnpm exec prisma generate && pnpm exec prisma db seed`
 - Em backends já evoluídos, o script evita regressão de `seed/main.ts` para template neutro quando o arquivo já estiver no padrão moderno com tasks registradas.
 - Consultar `references/prisma-init-checklist.md` para checklist operacional.
 
