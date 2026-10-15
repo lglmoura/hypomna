@@ -1,0 +1,4 @@
+interface:
+  display_name: "Config Auth"
+  short_description: "Escaffoldar a fundação do Better-Auth (cookie em web e web-admin) no monorepo"
+  default_prompt: "Escaffolde a fundação de autenticação do HYPOMNA com o Better-Auth conforme o PRD §4.1/§6.2: schema Prisma de identidade (com platformRole), auth.ts com e-mail e senha (único método de login) e platformRole com input false, AuthController em /api/auth/* e SessionGuard por cookie com cache-aside via SessionCacheService, CORS com credenciais para os clientes web e um auth-client por app com cookie (web e web-admin; web-marketing não autentica) — sem middleware e sem implementar os RFs de identidade (cadastro com tenant, verificação de e-mail, TOTP, rate limit), que ficam para as specs."

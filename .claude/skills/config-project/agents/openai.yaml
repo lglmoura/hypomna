@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Config Project'
+  short_description: 'Inicializar o monorepo HYPOMNA (api + web, web-admin, web-marketing) com turbo, pnpm e git hooks'
+  default_prompt: 'Inicialize (ou continue) o Turborepo idempotente e multi-tenant do HYPOMNA no diretório atual usando create-turbo (--package-manager pnpm) para reconciliar a estrutura padrão, sem copiar os projetos de exemplo apps/* e packages/ui do template, e crie os apps do PRD §1.4/§6.1 definidos em apps do skills.config.json: web, web-admin e web-marketing (Next.js, create-next-app com --use-pnpm --src-dir) e o backend NestJS apps/api. Crie os esqueletos de packages/domain, contracts, i18n, test-utils, api-client e ui, configure Zod, testes conforme a PRD §7.1 (Vitest + @amiceli/vitest-cucumber em api e apps Next, pnpm test:trace), TypeScript baseline e git hooks na raiz (pre-commit: lint-staged; pre-push: check-types + test:cov via turbo).'

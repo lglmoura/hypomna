@@ -19,12 +19,8 @@ Infra local (PRD §6.1): `docker compose` com PostgreSQL 16+, Redis 7+, MinIO (S
 
 - `git status` limpo. Se houver trabalho não versionado, pedir ao usuário que o commite antes de continuar. O `config-project` não tem `--dry-run` e já causou perda de apps ao ser reexecutado (incidente do kynesa em 2026-09-04); **nunca rodá-lo mais de uma vez** neste repositório.
 - Node.js `>=24` (PRD §6.1), `pnpm` e Docker instalados.
-- **Skills de configuração.** `config-project`, `config-prisma`, `config-redis`, `config-auth`, `setup-pre-commit` e `utils` ainda não existem neste repositório: trazê-las do kynesa para `.claude/skills/` e **adaptá-las antes de qualquer execução**, porque elas fixam a topologia do kynesa. Adaptações mínimas, cada uma registrada na evidência:
-  - `config-project`: não remover `apps/web` nem `packages/ui` (no Hypomna eles são da topologia, não do template do Turbo); remover todo o caminho `expo` (apps, `jest-expo`, `packages/mobile-ui`); trocar `packages/shared-schemas` por `packages/contracts`; criar os esqueletos de `packages/domain`, `packages/api-client`, `packages/i18n` e `packages/test-utils`; Vitest com `@amiceli/vitest-cucumber` nos quatro apps;
-  - `config-redis`: uma única instância e `REDIS_URL` (ver passo 3);
-  - `config-auth`: só clientes `cookie` (`apps/web` e `apps/web-admin`), sem client compartilhado mobile; o client de auth fica em cada app web;
-  - textos e referências de RF do kynesa trocados pelos do PRD do Hypomna.
-- Criar `.claude/skills/.env/skills.config.json` com `namespace: "@hypomna"`, `sharedModulePath: "packages/shared"`, `backendAppPath: "apps/api"`, `backendPort: 4000` e a lista `apps`:
+- Confirmar que as skills `config-project`, `config-prisma`, `config-redis`, `config-auth`, `setup-pre-commit` e `utils` existem em `.claude/skills/`, já adaptadas do kynesa para a topologia do Hypomna (sem Expo/mobile, `apps/web` e `packages/ui` preservados, seis pacotes internos, Redis em instância única, auth só por cookie). O `SKILL.md` de cada uma descreve o que gera e o que fica de fora.
+- Confirmar que `.claude/skills/.env/skills.config.json` tem `namespace: "@hypomna"`, `backendAppPath: "apps/api"`, `backendPort: 4000` e a lista `apps`:
 
   | `kind` | `path`               | `port` | `apiUrlEnvVar`        | `auth`   |
   | ------ | -------------------- | ------ | --------------------- | -------- |
@@ -32,7 +28,7 @@ Infra local (PRD §6.1): `docker compose` com PostgreSQL 16+, Redis 7+, MinIO (S
   | `next` | `apps/web-admin`     | 3001   | `NEXT_PUBLIC_API_URL` | `cookie` |
   | `next` | `apps/web-marketing` | 3002   | `NEXT_PUBLIC_API_URL` | `none`   |
 
-- Criar `openspec/specs/shared/como-executar.md` e `openspec/specs/shared/regras-de-nomenclatura.md` (mesmo conteúdo do kynesa, com os exemplos de nomes trocados pelo glossário do PRD §11.1) e preencher o `context` de `openspec/config.yaml` com a stack e as regras de `.claude/rules/general.md`.
+- Confirmar `openspec/specs/shared/como-executar.md`, `openspec/specs/shared/regras-de-nomenclatura.md` e o `context` de `openspec/config.yaml`.
 
 ## Passos
 
@@ -42,10 +38,10 @@ Infra local (PRD §6.1): `docker compose` com PostgreSQL 16+, Redis 7+, MinIO (S
    - **Versões:** usar as versões atuais (`create-next-app@latest`, `nest new`), sem pinar. O PRD só fixa Node.js 24.x, PostgreSQL 16+ e Redis 7+.
    - Esse passo já inclui os git hooks (Husky: pre-commit com lint-staged + ESLint + Prettier; pre-push com `check-types` e testes unitários, PRD §7.1), o ferramental de testes da PRD §7.1 (Vitest + `@amiceli/vitest-cucumber`) e o `pnpm test:trace` (RF-86) — **não rodar a skill `setup-pre-commit` separadamente depois**: o `SKILL.md` do `config-project` documenta que ela só deve ser usada isolada em repositórios fora do padrão Turborepo, e rodar as duas em sequência é redundante (na pior hipótese, gera `eslint.config`/`.lintstagedrc` concorrentes).
    - `packages/eslint-config` com a base de lint do PRD §7 (`simple-import-sort`, `no-else-return`, `eslint-plugin-boundaries`); as regras finas de Object Calisthenics e o lint contra `number` monetário entram como pendência da spec de arquitetura (Fase 0), não aqui.
-   - O template do Turbo nomeia o pacote de tsconfig como `packages/typescript-config`; o PRD §6.1 o chama de `packages/tsconfig`. Renomear para o nome do PRD (ajustando as referências) ou registrar o desvio como pendência de atualização do PRD.
-   - **Ajuste obrigatório logo após a skill e antes do passo 2:** o `config-project` grava `DATABASE_URL="postgresql://docker:docker@localhost:5432/docker?schema=public"` como placeholder. Trocar por `postgresql://hypomna:hypomna@localhost:5432/hypomna?schema=public` em `apps/api/.env` e `apps/api/.env.example`. `BETTER_AUTH_SECRET` fica como placeholder; o valor real é gerado pelo usuário localmente e nunca é commitado.
+   - O template do Turbo nomeia o pacote de tsconfig como `packages/typescript-config`; o PRD §6.1 o chama de `packages/tsconfig`. A skill mantém o nome do template (os pacotes internos o referenciam): registrar o desvio como pendência de atualização do PRD.
+   - **Conferir logo após a skill e antes do passo 2:** o `DATABASE_URL` em `apps/api/.env` e `.env.example` deve ser `postgresql://hypomna:hypomna@localhost:5432/hypomna?schema=public` (a skill deriva do namespace). `BETTER_AUTH_SECRET` fica como placeholder; o valor real é gerado pelo usuário localmente e nunca é commitado. Reexecuções da skill não sobrescrevem nenhum dos dois.
    - O schema Zod de env de `apps/api` declara as variáveis do PRD §7 ("Variáveis de ambiente (iniciais)") que este bootstrap usa; as de Stripe e OpenTelemetry entram opcionais até as fases que as consomem, e a ausência de uma obrigatória falha o boot.
-   - Aceite: os quatro apps e os oito pacotes da tabela existem; `pnpm run check-types` na raiz passa (ou a falha fica registrada como aviso, conforme a skill); `engines.node` e `engine-strict=true` presentes; nenhum `apps/docs` ou app Expo restante.
+   - Aceite: os quatro apps existem; `packages/domain`, `contracts`, `i18n`, `test-utils`, `api-client` e `ui` existem como esqueleto, ao lado de `eslint-config` e `typescript-config`; `pnpm run check-types` na raiz passa (ou a falha fica registrada como aviso, conforme a skill); `engines.node` e `engine-strict=true` presentes; nenhum `apps/docs` ou app Expo restante.
 
 2. **Configurar o Prisma na API**
    - Usar a skill `config-prisma`, nesta sequência (a partir da raiz):
@@ -54,19 +50,20 @@ Infra local (PRD §6.1): `docker compose` com PostgreSQL 16+, Redis 7+, MinIO (S
      - `pnpm --filter @hypomna/api run prisma:generate` (obrigatório antes de qualquer build; confirmar o nome real do workspace em `apps/api/package.json`).
    - **Não usar `--module auth`**: `auth.model.prisma` pertence à `config-auth` (passo 5). Sem `--module`, a skill cria o `bootstrap.model.prisma` temporário, o que é esperado.
    - **Não executar migration neste passo:** só existe o `bootstrap.model.prisma` temporário, sem modelo real a migrar. A primeira migration acontece no passo 5, quando o `auth.model.prisma` passa a existir (ver "Migrations" nas Observações Gerais).
-   - O `docker-compose.yml` é criado uma única vez a partir do `DATABASE_URL` já ajustado no passo 1. Aceite: imagem PostgreSQL 16 ou superior; `POSTGRES_USER`, `POSTGRES_PASSWORD` e `POSTGRES_DB` valem `hypomna`; `container_name` é `hypomna-db-postgres` (derivado do namespace, automático).
+   - O `docker-compose.yml` é criado uma única vez a partir do `DATABASE_URL` conferido no passo 1. Aceite: imagem PostgreSQL 16 ou superior; `POSTGRES_USER`, `POSTGRES_PASSWORD` e `POSTGRES_DB` valem `hypomna`; `container_name` é `hypomna-db-postgres` (derivado do namespace, automático).
+   - A skill também cria `packages/shared` (interface `TransactionManager`, consumida só pelo backend), que **não está no PRD §6.1**: registrar o desvio e decidir na spec de arquitetura se fica como pacote ou vai para `apps/api/src/shared` (PRD §6.2).
    - **Fora do escopo:** RLS, a role de aplicação sem `BYPASSRLS` e que não é dona das tabelas, a extensão do Prisma que injeta `tenantId` e o `SET LOCAL app.tenant_id` por transação (PRD §3.2, DT-01, DT-08). Isso é a spec `RF-00-schema` da Fase 0, com testes de integração próprios; registrar como pendência. Consequência prevista: o `DATABASE_URL` de migrations e o da aplicação vão divergir quando essa spec entrar.
    - Não é necessário subir o Postgres neste passo.
 
 3. **Configurar o Redis na API**
-   - Usar a skill `config-redis` (adaptada no passo 0):
+   - Usar a skill `config-redis`:
      - `node .claude/skills/config-redis/scripts/init-redis-backend.js --dry-run`
      - `node .claude/skills/config-redis/scripts/init-redis-backend.js --apply --install`
    - Topologia do PRD §6.2 e §7: **uma instância** Redis 7+ com `REDIS_URL` (porta 6379), usada por BullMQ (importação, recálculo de status de mesa, exportação, e-mails, webhooks), rate limit (RF-81) e cache de sessão. Por causa do BullMQ, `maxmemory-policy noeviction`. Não existem `REDIS_QUEUE_URL` nem `REDIS_CACHE_URL`; se for preciso separar fila e cache, isso é questão nova para o PRD, não decisão deste passo.
    - Toda chave de dado de domínio no cache é prefixada por `tenantId` (PRD §3.2). O bootstrap só cria a infraestrutura; a regra vale para os módulos que a usarem.
    - Aceite: `docker-compose.yml` contém `postgres` e `redis` juntos (nenhuma skill sobrescreve o arquivo inteiro; a ordem entre os passos 2 e 3 é indiferente); `container_name` `hypomna-redis` (automático); `REDIS_URL` em `.env` e `.env.example`; `SessionCacheService` em `apps/api/src/lib/session-cache/`.
    - **Filas BullMQ de negócio ficam fora deste passo** (sem `--queue`): importação (Fase 4), recálculo de mesa (Fase 6), exportação (Fase 8), webhooks do Stripe (Fase 7) e e-mails (Fase 1) são criadas com as specs que as usam.
-   - Fora do escopo: aplicar o rate limit em `/api/auth/*`, upload e importação (RF-81) — passo dos módulos de domínio.
+   - Fora do escopo: aplicar o rate limit em `/api/auth/*`, upload e importação (RF-81) — passo dos módulos de domínio. A skill já separa os throttlers `default` e `sensitive`, com fail-open e fail-closed quando o Redis cai; essa política não está no PRD e precisa ser confirmada na spec do RF-81.
 
 4. **Configurar storage e e-mail locais (MinIO e Mailpit)**
    - Não há skill para este passo: implementar à mão e registrar isso na evidência.
@@ -76,7 +73,7 @@ Infra local (PRD §6.1): `docker compose` com PostgreSQL 16+, Redis 7+, MinIO (S
    - Aceite: `docker compose config` valida; os quatro serviços (`postgres`, `redis`, `minio`, `mailpit`) sobem com `docker compose up -d` e ficam saudáveis (exige Docker).
 
 5. **Configurar autenticação (Better-Auth) na API e nos clientes**
-   - Usar a skill `config-auth` (adaptada no passo 0), depois de 1 a 4 concluídos:
+   - Usar a skill `config-auth`, depois de 1 a 4 concluídos:
      - `node .claude/skills/config-auth/scripts/init-auth.js --dry-run`
      - `node .claude/skills/config-auth/scripts/init-auth.js --apply --install`
      - Conferir o `auth.model.prisma` gerado contra a versão instalada do Better-Auth (`pnpm exec @better-auth/cli generate`, comparando o resultado sem sobrescrever o arquivo) e ajustar à mão se divergir — a skill nunca o regenera depois de criado.
@@ -85,10 +82,10 @@ Infra local (PRD §6.1): `docker compose` com PostgreSQL 16+, Redis 7+, MinIO (S
    - Pré-requisitos reais: infra Prisma da `config-prisma` (schema modular, `PrismaService`, client em `src/generated/prisma`) e `SessionCacheService` da `config-redis`. O modelo `User` é criado por esta skill, em `prisma/models/auth.model.prisma`.
    - Cobre só a fundação (PRD §4.1, §6.2):
      - Better-Auth montado em `/api/auth/*`, login somente por e-mail e senha (sem provedor social);
-     - `SessionGuard` (`401 { error, code: "UNAUTHORIZED", message }`, contrato de erro do início da §4) e `@CurrentSession()`;
+     - `SessionGuard` (`401 { error, code: "UNAUTHORIZED" }`; a `message` traduzida do contrato de erro da §4 entra com o `ExceptionFilter` global, RF-63) e `@CurrentSession()`;
      - cache-aside de sessão via `SessionCacheService`, com invalidação no logout;
      - `platformRole` com `input: false` (nenhum fluxo público grava papel, CA-RF07-1);
-     - sessão por **cookie** `HttpOnly`, `Secure`, `SameSite=Lax` em `apps/web` e `apps/web-admin`, cada um com o seu domínio e sem compartilhar sessão (RF-03, CA-RF03-2); `apps/web-marketing` não recebe nada.
+     - sessão por **cookie** em `apps/web` e `apps/web-admin`; `apps/web-marketing` não recebe nada.
    - **Fora do escopo deste passo** (registrar como pendências na spec, todas da Fase 1 e com spec própria em `.docs/specs/identity/`):
      - cadastro com criação atômica de `Tenant`, `TenantMembership` (`OWNER`) e `TraderProfile` (RF-01) e o teste gratuito (RF-68);
      - `TenantGuard` e `TenantContext` nas três camadas (RF-04, §3.2);
@@ -96,6 +93,7 @@ Infra local (PRD §6.1): `docker compose` com PostgreSQL 16+, Redis 7+, MinIO (S
      - verificação de e-mail obrigatória (RF-02), recuperação e troca de senha (RF-05, RF-06), com a skill `emailAndPassword`;
      - TOTP do Admin (RF-07, CA-RF07-2), com a skill `twoFactor`;
      - bloqueio progressivo e rate limit de autenticação (RF-81) e hardening, com a skill `security`;
+     - **isolamento de sessão entre `apps/web` e `apps/web-admin` (CA-RF03-2):** com uma instância do Better-Auth e o cookie no domínio da API, os dois apps compartilhariam a sessão no navegador. Decidir em ADR antes da spec de identidade (rewrite same-origin por app com `cookiePrefix` distinto, ou duas instâncias do Better-Auth);
      - **não usar o plugin `organization`**: o tenant é o `Tenant` do domínio (PRD §3.1), não uma organização do Better-Auth.
    - Passos manuais, a serem listados na spec e **executados pelo usuário**: gerar o `BETTER_AUTH_SECRET` real no `.env` do backend (nunca commitar); validar o login por e-mail e senha em `apps/web` e em `apps/web-admin`, confirmando que a sessão de um não vale no outro.
    - Regras: nunca usar middleware do Next.js nem verificação centralizada de sessão (`.claude/rules/auth-client.md`); não rodar o wizard da skill `create-auth` (não conhece NestJS); nunca configurar `secondaryStorage` (Redis não é fonte de verdade da sessão); `auth.ts` é regenerado a cada `--apply`, então não editá-lo à mão e não reexecutar a skill sem reincorporar mudanças.
@@ -119,7 +117,7 @@ Infra local (PRD §6.1): `docker compose` com PostgreSQL 16+, Redis 7+, MinIO (S
 - **Nunca rodar `pnpm run dev`** para verificar as mudanças (`.claude/rules/general.md`); verificar com `check-types`, testes e `docker compose`.
 - **Nenhum commit sem permissão explícita do usuário**; quando pedido, usar Conventional Commits e nunca `--no-verify`.
 - Usar Context7 para documentação de bibliotecas e Serena para busca/edição de código por símbolo (`.claude/rules/mcps.md`).
-- **Nomes "hypomna" no Docker/`.env`:** `container_name` do Postgres e do Redis é derivado do namespace pelas skills — automático; o do MinIO e do Mailpit segue o mesmo padrão, à mão. Usuário, senha e nome do banco vêm do `DATABASE_URL`, que **não** é automático: ajustar conforme o passo 1, **antes** do passo 2 (o `docker-compose.yml` é criado uma única vez e nunca sobrescrito).
+- **Nomes "hypomna" no Docker/`.env`:** `container_name` do Postgres e do Redis é derivado do namespace pelas skills; o do MinIO e do Mailpit segue o mesmo padrão, à mão. Usuário, senha e nome do banco vêm do `DATABASE_URL`, que a `config-project` também deriva do namespace: conferir no passo 1, **antes** do passo 2 (o `docker-compose.yml` é criado uma única vez e nunca sobrescrito).
 
 ## Critério de conclusão
 
@@ -128,4 +126,4 @@ Infra local (PRD §6.1): `docker compose` com PostgreSQL 16+, Redis 7+, MinIO (S
 - nunca remover uma task;
 - se uma task não puder ser executada, registrar o motivo na evidência — ela continua na lista e a spec não é dada como concluída até ser resolvida ou o desvio ser aceito pelo usuário;
 - quando a task indicar uma skill, usá-la como implementação principal; se ela não cobrir o caso inteiro, aplicá-la até onde fizer sentido e registrar o desvio na evidência;
-- a spec inclui, além dos passos 0 a 5, as pendências e os passos manuais listados nos passos 1, 2, 4 e 5 (nome de `packages/tsconfig`, `RF-00-schema` com RLS e role de aplicação, `FileStorage`, RF-01, `TenantGuard`, `AdminGuard`, RF-02/RF-05/RF-06, TOTP do RF-07, RF-81, `BETTER_AUTH_SECRET` real, login validado nos dois apps web). Os que dependem do usuário ficam como tasks e só são marcados depois que ele confirmar a execução.
+- a spec inclui, além dos passos 0 a 5, as pendências e os passos manuais listados nos passos 1 a 5 (nome de `packages/tsconfig`, `packages/shared` da `config-prisma` fora do PRD §6.1, `RF-00-schema` com RLS e role de aplicação, política de degradação do rate limit, `FileStorage`, RF-01, `TenantGuard`, `AdminGuard`, RF-02/RF-05/RF-06, TOTP do RF-07, RF-81, ADR do isolamento de sessão (CA-RF03-2), `BETTER_AUTH_SECRET` real, login validado nos dois apps web). Os que dependem do usuário ficam como tasks e só são marcados depois que ele confirmar a execução.

@@ -1,0 +1,32 @@
+{
+  "defaults": {
+    "namespace": "@hypomna",
+    "sharedModulePath": "packages/shared",
+    "backendAppPath": "apps/api",
+    "backendPort": 4000,
+    "backendPortEnvVar": "PORT",
+    "apps": [
+      {
+        "kind": "next",
+        "path": "apps/web",
+        "port": 3000,
+        "apiUrlEnvVar": "NEXT_PUBLIC_API_URL",
+        "auth": "cookie"
+      },
+      {
+        "kind": "next",
+        "path": "apps/web-admin",
+        "port": 3001,
+        "apiUrlEnvVar": "NEXT_PUBLIC_API_URL",
+        "auth": "cookie"
+      },
+      {
+        "kind": "next",
+        "path": "apps/web-marketing",
+        "port": 3002,
+        "apiUrlEnvVar": "NEXT_PUBLIC_API_URL",
+        "auth": "none"
+      }
+    ]
+  }
+}

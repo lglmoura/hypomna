@@ -8,6 +8,20 @@ schema: spec-driven
 #     Tech stack: TypeScript, React, Node.js
 #     We use conventional commits
 #     Domain: e-commerce platform
+context: |
+  Produto: HYPOMNA, diário de trading multi-tenant (o tenant é o Trader). Fonte de verdade: .docs/PRD.md;
+  regras operacionais em .claude/rules/ (general, architecture, testing, typescript, i18n, react, api,
+  auth-client, openapi, mcps).
+  Monorepo pnpm + Turborepo, Node.js 24.x, TypeScript strict e ESM, namespace @hypomna.
+  Apps: apps/api (NestJS, Clean Architecture, Prisma + Postgres com RLS, Redis/BullMQ, Better-Auth,
+  Zod via nestjs-zod, S3/MinIO), apps/web (Trader), apps/web-admin (Admin e Suporte),
+  apps/web-marketing (Visitante, sem login), todos Next.js App Router com shadcn/ui e Tailwind.
+  Pacotes: domain, contracts, api-client, i18n, ui, test-utils, eslint-config, typescript-config.
+  Testes: Vitest em todos os níveis, Testcontainers na integração, @amiceli/vitest-cucumber no aceite
+  (.feature em pt-BR com tag @CA-RF<nn>-<k>), Playwright no ponta a ponta; pnpm test:trace (RF-86).
+  Inegociável: isolamento de tenant em toda camada; dinheiro só como Money sobre decimal exato;
+  nenhum texto de UI fora dos catálogos de packages/i18n (pt-BR, en, es).
+  Código e nomes em inglês; specs, tarefas e evidências em pt-BR.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.
@@ -18,6 +32,11 @@ schema: spec-driven
 #       - Always include a "Non-goals" section
 #     tasks:
 #       - Break tasks into chunks of max 2 hours
+rules:
+  tasks:
+    - Seguir openspec/specs/shared/como-executar.md (checkbox marcado seguido de evidência datada; nunca remover task)
+    - Nomes da change e de arquivos conforme openspec/specs/shared/regras-de-nomenclatura.md
+    - Toda task de comportamento de RF parte dos cenários CA-* do PRD, com o teste escrito e visto falhar antes do código
 
 # Per-operation guidance (optional)
 # Add advisory guidance for how apply and archive work should be conducted.

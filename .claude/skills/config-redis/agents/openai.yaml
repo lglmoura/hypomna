@@ -1,0 +1,4 @@
+interface:
+  display_name: "Config Redis"
+  short_description: "Inicializar cache, rate limit e fila Redis (instância única) no backend"
+  default_prompt: "Inicialize e padronize a infraestrutura Redis no backend NestJS com a topologia do PRD do HYPOMNA (§6.2, §7): uma instância Redis 7+ em REDIS_URL, noeviction por causa do BullMQ. Cache de sessão cache-aside na frente do Postgres (cai para o Postgres), storage Redis do @nestjs/throttler para o RF-81 (throttlers default e sensitive, este para /api/auth/*) e fila BullMQ com retry/backoff exponencial (enqueueJob nunca é fail-open). Adicione o serviço redis ao docker-compose.yml existente sem sobrescrevê-lo e não crie filas de negócio."
