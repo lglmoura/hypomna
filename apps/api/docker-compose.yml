@@ -1,0 +1,102 @@
+name: hypomna
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: hypomna-redis
+    restart: unless-stopped
+    # Instancia unica (PRD §6.2/§7, REDIS_URL): o BullMQ exige noeviction — qualquer politica de
+    # descarte pode apagar jobs pendentes — e appendonly mantem os jobs depois de um restart.
+    # Cache de sessao e rate limit convivem aqui sempre com TTL proprio.
+    command:
+      [
+        'redis-server',
+        '--maxmemory-policy',
+        'noeviction',
+        '--appendonly',
+        'yes',
+      ]
+    ports:
+      - '6381:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  postgres:
+    image: postgres:16-alpine
+    container_name: hypomna-db-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hypomna
+      POSTGRES_PASSWORD: hypomna
+      POSTGRES_DB: hypomna
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U hypomna']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  minio:
+    # As imagens oficiais minio/minio e minio/mc deixaram de ser publicadas (pull negado no Docker Hub e
+    # no quay.io); usa-se o build do Chainguard, que traz minio, mc e /bin/sh (P0-15).
+    image: cgr.dev/chainguard/minio:latest@sha256:dc455cdd4db6e390b1b26514f15ff37681a777bf8dab41aac445a0259f751e56
+    container_name: hypomna-storage-minio
+    restart: unless-stopped
+    # Credenciais so de desenvolvimento, lidas do .env ao lado deste arquivo (S3_ACCESS_KEY/S3_SECRET_KEY).
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:?S3_ACCESS_KEY is required}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?S3_SECRET_KEY is required}
+    command: ['server', '/data', '--console-address', ':9001']
+    ports:
+      - '9010:9000'
+      - '9011:9001'
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ['CMD', '/usr/bin/mc', 'ready', 'local']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  # Cria o bucket de S3_BUCKET de forma idempotente; nunca criar o bucket a mao.
+  minio-init:
+    image: cgr.dev/chainguard/minio-client:latest-dev@sha256:799f7e86017c3ee8d00f6372e1ee28dd73453f271d5b306a47af8e8a408a777a
+    container_name: hypomna-storage-minio-init
+    restart: 'no'
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?S3_ACCESS_KEY is required}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY is required}
+      S3_BUCKET: ${S3_BUCKET:?S3_BUCKET is required}
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - >-
+        mc alias set hypomna http://minio:9000 "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" &&
+        mc mb --ignore-existing "hypomna/$$S3_BUCKET"
+  mailpit:
+    image: axllent/mailpit:latest@sha256:23fe39e81bde596a918000b3135c0f85dc8bb4c9ea6be274b051143f3e300387
+    container_name: hypomna-mail-mailpit
+    restart: unless-stopped
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local

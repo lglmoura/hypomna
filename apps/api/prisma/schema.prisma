@@ -1,0 +1,13 @@
+// Prisma schema root (modular mode). PRD 5.1 propoe um unico schema.prisma; aqui o mesmo conteudo
+// e' dividido por dominio — generator/datasource ficam neste arquivo e os models em
+// prisma/models/*.model.prisma (identidade Better-Auth em auth.model.prisma).
+// Add per-module models under prisma/models/*.model.prisma
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}

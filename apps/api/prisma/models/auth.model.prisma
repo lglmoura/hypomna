@@ -1,0 +1,91 @@
+// Modelos de identidade do Better-Auth (PRD §5: "User — so autenticacao + locale, timeZone,
+// platformRole"). Gerado uma unica vez pela skill config-auth — nunca sobrescrito depois, para
+// permitir campos de plugins do Better-Auth (ex.: "twoFactor" para o TOTP do Admin, RF-07) sem
+// perder edicoes manuais.
+// Referencia oficial: https://www.better-auth.com/docs/adapters/prisma
+//
+// O shape exato deste schema muda entre versoes do "better-auth". Antes da primeira migration,
+// confira este arquivo contra a versao instalada com o gerador oficial (no backend, depois de
+// "pnpm install"):
+//   pnpm exec @better-auth/cli generate
+// e ajuste manualmente aqui se houver divergencia — este arquivo nunca e' regenerado.
+//
+// Pendencias das specs seguintes (nao deste bootstrap):
+//   - locale e timeZone (PRD §5), gravados no cadastro a partir do navegador (RF-01, RF-09);
+//   - TenantMembership e TraderProfile (RF-01) e a relacao User -> Tenant;
+//   - identificadores UUID v7 (PRD §5, "Restricoes"), na spec RF-00-schema.
+// User nao carrega tenantId: a identidade e' anterior ao tenant, e o Admin nao pertence a
+// tenant algum (PRD §3.1).
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  // Papel de plataforma: so ADMIN/SUPPORT sao papeis explicitos (PRD §3.3). O Trader e'
+  // resolvido pelo TenantMembership OWNER, nunca por este campo. Sem cadastro publico de
+  // ADMIN/SUPPORT (RF-07, CA-RF07-1).
+  platformRole  PlatformRole?
+
+  @@unique([email])
+  @@map("user")
+}
+
+enum PlatformRole {
+  ADMIN   // opera a plataforma: tenants, assinaturas, catalogos, papeis (PRD §3.3)
+  SUPPORT // somente leitura de metadados de tenant (PRD §3.3)
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}

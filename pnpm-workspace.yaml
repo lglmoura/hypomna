@@ -1,0 +1,20 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+allowBuilds:
+  '@swc/core': true
+  '@parcel/watcher': true
+  '@nestjs/core': true
+  '@sentry/cli': true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+  bufferutil: true
+  utf-8-validate: true
+  fsevents: true
+  protobufjs: true
+  prisma: true
+  '@prisma/engines': true
+  msgpackr-extract: true
+  cpu-features: false
+  ssh2: false

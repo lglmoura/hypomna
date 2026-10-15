@@ -1,0 +1,36 @@
+{
+  "name": "@hypomna/workspace",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "check-types": "turbo run check-types",
+    "test": "turbo run test",
+    "test:cov": "turbo run test:cov",
+    "test:trace": "node scripts/test-trace.mjs",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@hypomna/eslint-config": "workspace:*",
+    "eslint": "^10.12.0",
+    "globals": "17.12.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "3.9.6",
+    "ts-node": "^10.9.2",
+    "turbo": "^2.11.8",
+    "typescript": "7.0.2"
+  },
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "apps/*",
+    "modules/*",
+    "packages/*",
+    "packages/config/*"
+  ]
+}

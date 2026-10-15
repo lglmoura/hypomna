@@ -1,0 +1,21 @@
+{
+  "name": "@hypomna/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@hypomna/typescript-config": "workspace:*",
+    "typescript": "^7.0.2"
+  }
+}

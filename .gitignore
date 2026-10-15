@@ -45,3 +45,6 @@ yarn-error.log*
 # apesar da regra generica ".env" acima.
 !.claude/skills/.env/
 !.claude/skills/.env/skills.config.json
+
+# TypeScript incremental build info
+*.tsbuildinfo
