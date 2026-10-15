@@ -29,7 +29,9 @@ Restrições que moldam a abordagem: as skills são scripts determinísticos com
 7. **Bucket por serviço de init (`mc mb --ignore-existing`).** Idempotente e reproduzível; criação à mão não seria.
 8. **`auth.model.prisma` conferido contra o CLI do Better-Auth instalado** (`pnpm exec @better-auth/cli generate` para arquivo temporário, comparando sem sobrescrever), porque a skill nunca o regenera depois de criado.
 9. **Versões atuais, sem pinar**, exceto Node 24.x, PostgreSQL 16+ e Redis 7+ (PRD). Documentação de bibliotecas via Context7 durante a execução.
-10. **Nomes de capability em inglês (`platform/*`, `identity/*`)**, alinhados aos diretórios `.docs/specs/platform` e `.docs/specs/identity` do PRD; conteúdo em pt-BR.
+10. **Infraestrutura local própria, coexistindo com outros projetos.** Decisão do usuário durante o apply: a máquina já roda o kynesa nas portas 5432, 6379, 9000 e 9001, e o Hypomna não pode reutilizar nem parar os containers dele. O compose usa `name: hypomna` e portas de host próprias (Postgres 5433, Redis 6381, MinIO 9010/9011, Mailpit 1025/8025); as portas internas dos containers não mudam. `DATABASE_URL`, `REDIS_URL` e `S3_ENDPOINT` locais seguem essas portas. Alternativas descartadas: parar o outro projeto (interfere em trabalho alheio) e portas parametrizáveis por variável (mais configuração sem ganho no dev local).
+11. **MinIO pela imagem do Chainguard, fixada por digest.** As imagens oficiais `minio/minio` e `minio/mc` deixaram de ser publicadas para pull. `cgr.dev/chainguard/minio` e `cgr.dev/chainguard/minio-client` trazem `minio`, `mc` e `/bin/sh`; a tag `latest` é fixada pelo digest para reprodutibilidade.
+12. **Nomes de capability em inglês (`platform/*`, `identity/*`)**, alinhados aos diretórios `.docs/specs/platform` e `.docs/specs/identity` do PRD; conteúdo em pt-BR.
 
 ## Risks / Trade-offs
 
