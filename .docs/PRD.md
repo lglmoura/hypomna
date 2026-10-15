@@ -965,7 +965,7 @@ Preenchida à medida que as specs forem aprovadas e implementadas. Um RF só é 
 | RF-78 a RF-79        | `.docs/specs/marketing/` _(a criar)_   | —      | CA-RF78-1 a CA-RF79-1                        | —      |
 | RF-80 a RF-86        | `.docs/specs/platform/` _(a criar)_    | —      | CA-RF80-1 a CA-RF86-1                        | —      |
 
-> **Fundação da Fase 0 (infraestrutura, sem RF):** change OpenSpec `openspec/changes/config-projeto/` (monorepo, env, `docker compose` local, Prisma, Redis e a fundação do Better-Auth). Não entrega nenhum RF nem marca linha desta tabela: os cenários `CA-*` de identidade continuam com as specs de `.docs/specs/identity/`. Pendências abertas pelo bootstrap em `.docs/pendencias/fase-0.md`.
+> **Fundação da Fase 0 (infraestrutura, sem RF):** change OpenSpec `openspec/changes/archive/2026-10-15-config-projeto/` (requisitos em `openspec/specs/platform/` e `openspec/specs/identity/`) (monorepo, env, `docker compose` local, Prisma, Redis e a fundação do Better-Auth). Não entrega nenhum RF nem marca linha desta tabela: os cenários `CA-*` de identidade continuam com as specs de `.docs/specs/identity/`. Pendências abertas pelo bootstrap em `.docs/pendencias/fase-0.md`.
 
 > Todo RF desta versão tem ao menos um cenário `CA-*`. Cenários técnicos adicionais descobertos durante a escrita de uma spec de feature voltam a este PRD na revisão seguinte, para que o `test:trace` os cubra.
 

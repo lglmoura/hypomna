@@ -1,4 +1,4 @@
-Execução conforme [Como executar](../../specs/shared/como-executar.md) e nomes conforme [Regras de nomenclatura](../../specs/shared/regras-de-nomenclatura.md). Objetivo e contexto técnico: `proposal.md` e `design.md` desta change.
+Execução conforme [Como executar](../../../specs/shared/como-executar.md) e nomes conforme [Regras de nomenclatura](../../../specs/shared/regras-de-nomenclatura.md). Objetivo e contexto técnico: `proposal.md` e `design.md` desta change.
 
 - Cada grupo 1–6 roda num subagente distinto, com contexto limpo, **em sequência** (cada grupo depende do anterior).
 - Ao concluir uma task: marcar o checkbox e registrar a evidência logo abaixo, citando o comando executado, os arquivos criados/alterados relevantes e as linhas `[RISK]`/`[FAIL]` do `.log/skills.log` (não versionado):
